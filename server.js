@@ -6,7 +6,6 @@ import dotenv from "dotenv";
 import fetch from "node-fetch";
 
 dotenv.config();
-console.log(markets);
 
 // Connect to Redis
 const redis_url = process.env.REDIS_URL;
@@ -38,8 +37,12 @@ app.use(function(req, res, next) {
 app.get("/market", async function (req, res) {
     const chain_id = req.query.chainid;
     const market_id = req.query.id;
-    const market = await getMarket(market_id, chain_id)
-    return res.status(200).json(market);
+    try {
+        const market = await getMarket(market_id, chain_id)
+        return res.status(200).json(market);
+    } catch (e) {
+        return res.status(400).json({ error: e.message });
+    }
 });
 
 app.listen(process.env.PORT || 3002);
@@ -47,6 +50,8 @@ app.listen(process.env.PORT || 3002);
 
 async function getMarket(market_id, chainid = null) {
     let market_hash;
+    if (chainid && !markets[chainid]) throw new Error("Unsupported chainid");
+    if (chainid && market_id.length < 20 && !markets[chainid][market_id]) throw new Error("Invalid alias");
     if (chainid && markets[chainid][market_id]) {
         market_hash = markets[chainid][market_id]
     }
@@ -55,13 +60,16 @@ async function getMarket(market_id, chainid = null) {
     }
     const redis_key = "zigzag:markets:" + market_hash;
     let marketInfo = await redis.get(redis_key);
-    if (marketInfo) return JSON.parse(marketInfo);
+    if (marketInfo) {
+        return JSON.parse(marketInfo);
+    }
     else {
         marketInfo = await fetch("https://arweave.net/" + market_hash)
             .then(r => r.json())
-        console.log(marketInfo);
         marketInfo.baseAsset = await getTokenInfo(marketInfo.baseAssetId, marketInfo.zigzagChainId);
         marketInfo.quoteAsset = await getTokenInfo(marketInfo.quoteAssetId, marketInfo.zigzagChainId);
+        marketInfo.id = market_hash;
+        marketInfo.alias = getAliasForHash(market_hash, chainid);
         redis.set(redis_key, JSON.stringify(marketInfo));
         return marketInfo;
     }
@@ -77,4 +85,13 @@ async function getTokenInfo(tokenId, chainid) {
         redis.set(redis_key, JSON.stringify(tokenInfo));
         return tokenInfo;
     }
+}
+
+function getAliasForHash(market_hash, chainid) {
+    for (let alias in markets[chainid]) {
+        if (market_hash === markets[chainid][alias]) {
+            return alias;
+        }
+    }
+    return null;
 }
