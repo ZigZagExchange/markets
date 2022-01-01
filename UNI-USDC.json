@@ -1,0 +1,13 @@
+{
+    "zigzagChainId": 1,
+    "baseAssetId": 23,
+    "quoteAssetId": 2,
+    "baseAssetName": "Uniswap",
+    "quoteAssetName": "USD Coin",
+    "displayName": "UNI-USDC",
+    "pricePrecisionDecimals": 4,
+    "baseFee": 0.1,
+    "quoteFee": 1,
+    "minSize": 0.01,
+    "maxSize": 10000
+}
