@@ -6,7 +6,7 @@ const markets = {
         "UNI-USDC": "kbv1tA3R5LXMlnOipHUpczMiJ-AGzHWtEDzuYmQvCmc"
     },
     1000: {
-        "ETH-USDC": "Trz9R2BPwQkXhF_NRMsKv2reX_K3-0sE6tXiH8apz_4",
+        "ETH-USDC": "9a2HIkOMtEp-DshgwCkz3gKfyp-1T-sddpUAjM8bdPY",
     }
 }
 export default markets;
