@@ -4,10 +4,14 @@ Base URL: https://zigzag-markets.herokuapp.com/
 
 ## Usage
 
-You can specify an alias and a chain for supported markets
+You can specify one or more aliases and a chain for supported markets
 
 ```
 curl "https://zigzag-markets.herokuapp.com/market?id=UNI-USDC&chainid=1"
+```
+
+```
+curl "https://zigzag-markets.herokuapp.com/market?id=UNI-USDC,ETH-USDC&chainid=1"
 ```
 
 Or simply a market ID to grab any market
