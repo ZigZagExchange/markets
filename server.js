@@ -36,13 +36,18 @@ app.use(function(req, res, next) {
 
 app.get("/markets", async function (req, res) {
     const chain_id = req.query.chainid;
-    const market_id = req.query.id;
-    try {
-        const market = await getMarket(market_id, chain_id)
-        return res.status(200).json(market);
-    } catch (e) {
-        return res.status(400).json({ error: e.message });
+    const markets = req.query.id.split(",");
+    const marketInfo = [];
+    for (let i in markets) {
+        const market_id = markets[i];
+        try {
+            const market = await getMarket(market_id, chain_id)
+            marketInfo.push(market);
+        } catch (e) {
+            return res.status(400).json({ error: e.message });
+        }
     }
+    return res.status(200).json(marketInfo);
 });
 
 app.listen(process.env.PORT || 3002);
