@@ -34,7 +34,7 @@ app.use(function(req, res, next) {
   next();
 });
 
-app.get("/market", async function (req, res) {
+app.get("/markets", async function (req, res) {
     const chain_id = req.query.chainid;
     const market_id = req.query.id;
     try {
