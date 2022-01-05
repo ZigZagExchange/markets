@@ -1,0 +1,13 @@
+{
+    "zigzagChainId": 1000,
+    "baseAssetId": 0,
+    "quoteAssetId": 2,
+    "baseAssetName": "Ethereum",
+    "quoteAssetName": "USD Coin",
+    "displayName": "ETH-USDC",
+    "pricePrecisionDecimals": 2,
+    "baseFee": 0.0003,
+    "quoteFee": 1,
+    "minSize": 0.0003,
+    "maxSize": 100
+}
