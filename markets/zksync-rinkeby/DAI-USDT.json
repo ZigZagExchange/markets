@@ -1,0 +1,13 @@
+{
+    "zigzagChainId": 1000,
+    "baseAssetId": 19,
+    "quoteAssetId": 1,
+    "baseAssetName": "Dai",
+    "quoteAssetName": "Tether",
+    "displayName": "DAI-USDT",
+    "pricePrecisionDecimals": 6,
+    "baseFee": 1,
+    "quoteFee": 1,
+    "minSize": 1,
+    "maxSize": 1000000
+}
