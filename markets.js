@@ -10,6 +10,8 @@ const markets = {
         "ETH-USDT": "tbsmPCDS1VQsYnrx9E3fVMts1K739wx3mtdf1JD5yEY",
         "DAI-USDT": "7JlNc1jhK1WH72wgpne2W-VFUxTWAuuFLElaIhrXV-k",
         "DAI-USDC": "e_bYN2KK65TpAJN60xpIGiMADHx0gK4-3in44RzJFQg",
+        "USDC-USDT": "JmSJzCKMZRifQ6fTS9CAPu7nt_0pttyCD8nX7dPTKZo",
+        "ETH-DAI": "OCE_148AGG4IzPg2AY0Ou_LiGec_4JdKyRUFt83erRI",
     }
 }
 export default markets;
