@@ -1,0 +1,13 @@
+{
+    "zigzagChainId": 1,
+    "baseAssetId": 1,
+    "quoteAssetId": 2,
+    "baseAssetName": "Dai",
+    "quoteAssetName": "USD Coin",
+    "displayName": "DAI-USDC",
+    "pricePrecisionDecimals": 6,
+    "baseFee": 1,
+    "quoteFee": 1,
+    "minSize": 1,
+    "maxSize": 1000000
+}

@@ -1,0 +1,13 @@
+{
+    "zigzagChainId": 1,
+    "baseAssetId": 2,
+    "quoteAssetId": 4,
+    "baseAssetName": "USD Coin",
+    "quoteAssetName": "Tether",
+    "displayName": "USDC-USDT",
+    "pricePrecisionDecimals": 6,
+    "baseFee": 1,
+    "quoteFee": 1,
+    "minSize": 1,
+    "maxSize": 1000000
+}
