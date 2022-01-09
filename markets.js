@@ -1,7 +1,7 @@
 // Markets are keyed by chainid than market alias
 const markets = {
     1: {
-        "ETH-USDT": "gc5YxJq6KJ1Ks2daH1iLPm4Roo7o-PAzQhr0BahAhmE",
+        "ETH-USDT": "Kmd5K6bOj3WnUklSbv7Ub4j93rg_PZxunrmhLBgSaoU",
         "ETH-USDC": "Trz9R2BPwQkXhF_NRMsKv2reX_K3-0sE6tXiH8apz_4",
         "UNI-USDC": "kbv1tA3R5LXMlnOipHUpczMiJ-AGzHWtEDzuYmQvCmc",
         "DAI-USDC": "_Rcroy56mn9HcJOMggq8iRPgdQOxw_Y6JAoYHQ-xm8w",

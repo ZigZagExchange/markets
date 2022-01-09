@@ -1,7 +1,7 @@
 {
     "zigzagChainId": 1,
     "baseAssetId": 0,
-    "quoteAssetId": 1,
+    "quoteAssetId": 4,
     "baseAssetName": "Ethereum",
     "quoteAssetName": "Tether",
     "displayName": "ETH-USDT",
