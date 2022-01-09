@@ -1,0 +1,13 @@
+{
+    "zigzagChainId": 1,
+    "baseAssetId": 0,
+    "quoteAssetId": 15,
+    "baseAssetName": "Ethereum",
+    "quoteAssetName": "Wrapped Bitcoin",
+    "displayName": "ETH-WBTC",
+    "pricePrecisionDecimals": 2,
+    "baseFee": 0.0003,
+    "quoteFee": 0.00003,
+    "minSize": 0.0003,
+    "maxSize": 300
+}
