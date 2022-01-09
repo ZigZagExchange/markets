@@ -8,6 +8,12 @@ const markets = {
         "DAI-USDT": "itjhj-Rjh0l7W4pQsoYZdbwJocJzGl2OpPEf4Cxbz5mY",
         "ETH-DAI": "B2j7NkWft-N3hMhBv2MBZosqNvMyOTfNmob5fLvCTsM",
         "USDC-USDT": "xhL4owDmQoEWQMpYYthRKR1aMb5SA8ByOuhG8YRZHe4",
+        "WBTC-USDT": "MUgnwBkv1i8CpA0xMcFteLO9d0n96tB0FnNSz23K5Zo",
+        "WBTC-USDC": "CGUcGYyS6l_7j9zfOGyI8lcM_o36v_czkPzJkBw-DU8",
+        "WBTC-DAI": "UjBEuRS2dJGdXfOfqz7MWscRL4YuE0SHlmFzvrdf6dg",
+        "ETH-WBTC": "IrBdXheylXlwJL7Rxcfu8Yo6XZamyFgre0moRnQ6ddM",
+        "WETH-ETH": "GCppau3ohRdH9a7tFbgJV0Twu1vNTuJ9xSvOWFOe9Ag",
+        "ETH-FRAX": "aZiI-chmld9rrc8NwK5W0vUDcl_VQoYcnhAtNxfog5A",
     },
     1000: {
         "ETH-USDC": "9a2HIkOMtEp-DshgwCkz3gKfyp-1T-sddpUAjM8bdPY",
