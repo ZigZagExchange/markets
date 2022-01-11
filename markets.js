@@ -2,7 +2,7 @@
 const markets = {
     1: {
         "ETH-USDT": "Kmd5K6bOj3WnUklSbv7Ub4j93rg_PZxunrmhLBgSaoU",
-        "ETH-USDC": "Trz9R2BPwQkXhF_NRMsKv2reX_K3-0sE6tXiH8apz_4",
+        "ETH-USDC": "OZ9vgSF69jyj8--ZFUSHYTxDT07_ac1En5P2gWoS5zE",
         "UNI-USDC": "kbv1tA3R5LXMlnOipHUpczMiJ-AGzHWtEDzuYmQvCmc",
         "DAI-USDC": "_Rcroy56mn9HcJOMggq8iRPgdQOxw_Y6JAoYHQ-xm8w",
         "DAI-USDT": "HYyrwZYjctJM1P2YUO09iE-FPuVoVK015pEi2JdJJrY",
