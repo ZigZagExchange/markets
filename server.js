@@ -54,33 +54,32 @@ app.listen(process.env.PORT || 3002);
 
 
 async function getMarket(market_id, chainid = null) {
-    let market_hash;
-    if (chainid && !markets[chainid]) throw new Error("Unsupported chainid");
-    if (chainid && market_id.length < 20 && !markets[chainid][market_id]) throw new Error("Invalid alias");
-    if (chainid && markets[chainid][market_id]) {
-        market_hash = markets[chainid][market_id]
+    let marketInfo;
+    if (market_id.length < 20) {
+        if (!chainid) throw new Error("chainid must be set for alias calls");
+        const alias = market_id;
+        marketInfo = await redis.get(`zigzag:markets:${chainid}:${alias}`);
+        if (marketInfo) {
+            return JSON.parse(marketInfo);
+        }
+        else {
+            throw new Error("bad alias");
+        }
     }
-    else {
-        market_hash = market_id;
-    }
-    const redis_key = "zigzag:markets:" + market_hash;
-    const redis_key_alias = `zigzag:markets:${chainid}:${market_id}`;
-    let marketInfo = await redis.get(redis_key);
+
+    const redis_key = "zigzag:markets:" + market_id;
+    marketInfo = await redis.get(redis_key);
     if (marketInfo) {
         return JSON.parse(marketInfo);
     }
-    marketInfo = await redis.get(redis_key_alias);
-    if (marketInfo) {
-        return JSON.parse(marketInfo);
-    }
     else {
-        marketInfo = await fetch("https://arweave.net/" + market_hash)
+        marketInfo = await fetch("https://arweave.net/" + market_id)
             .then(r => r.json())
         marketInfo.baseAsset = await getTokenInfo(marketInfo.baseAssetId, marketInfo.zigzagChainId);
         marketInfo.quoteAsset = await getTokenInfo(marketInfo.quoteAssetId, marketInfo.zigzagChainId);
-        marketInfo.id = market_hash;
+        marketInfo.id = market_id;
         marketInfo.alias = marketInfo.baseAsset.symbol + "-" + marketInfo.quoteAsset.symbol;
-        const redis_key_alias = `zigzag:markets:${chainid}:${marketInfo.alias}`;
+        const redis_key_alias = `zigzag:markets:${marketInfo.zigzagChainId}:${marketInfo.alias}`;
         redis.set(redis_key, JSON.stringify(marketInfo));
         redis.set(redis_key_alias, JSON.stringify(marketInfo));
         return marketInfo;
@@ -97,13 +96,4 @@ async function getTokenInfo(tokenId, chainid) {
         redis.set(redis_key, JSON.stringify(tokenInfo));
         return tokenInfo;
     }
-}
-
-function getAliasForHash(market_hash, chainid) {
-    for (let alias in markets[chainid]) {
-        if (market_hash === markets[chainid][alias]) {
-            return alias;
-        }
-    }
-    return null;
 }
