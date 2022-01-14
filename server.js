@@ -74,8 +74,10 @@ async function getMarket(market_id, chainid = null) {
         marketInfo.baseAsset = await getTokenInfo(marketInfo.baseAssetId, marketInfo.zigzagChainId);
         marketInfo.quoteAsset = await getTokenInfo(marketInfo.quoteAssetId, marketInfo.zigzagChainId);
         marketInfo.id = market_hash;
-        marketInfo.alias = getAliasForHash(market_hash, chainid);
+        marketInfo.alias = marketInfo.baseAsset.symbol + "-" + marketInfo.quoteAsset.symbol;
+        const redis_key_alias = "zigzag:markets:" + marketInfo.alias;
         redis.set(redis_key, JSON.stringify(marketInfo));
+        redis.set(redis_key_alias, JSON.stringify(marketInfo));
         return marketInfo;
     }
 }
