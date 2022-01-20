@@ -5,7 +5,7 @@
     "baseAssetName": "Ethereum",
     "quoteAssetName": "Wrapped Bitcoin",
     "displayName": "ETH-WBTC",
-    "pricePrecisionDecimals": 2,
+    "pricePrecisionDecimals": 6,
     "baseFee": 0.0003,
     "quoteFee": 0.00003,
     "minSize": 0.0003,
