@@ -101,6 +101,7 @@ async function getTokenInfo(tokenId, chainid) {
     if (!chainid) throw new Error("chainid not set");
     const redis_key = `tokeninfo:${chainid}:${tokenId}`;
     let tokenInfo = await redis.get(redis_key);
+    await redis.expire(redis_key, 86400)
     if (tokenInfo) return JSON.parse(tokenInfo);
     else {
         tokenInfo = await syncProvider[chainid].tokenInfo(tokenId);
