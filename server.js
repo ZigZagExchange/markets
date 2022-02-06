@@ -49,6 +49,10 @@ app.get("/markets", async function (req, res) {
         const market_id = markets[i];
         try {
             const market = await getMarket(market_id, chain_id)
+            const baseFee = TOKEN_FEES[chain_id][marketInfo.baseAsset.symbol];
+            if(baseFee) { marketInfo.baseFee = baseFee; }
+            const quoteFee = TOKEN_FEES[chain_id][marketInfo.quoteAsset.symbol];
+            if(quoteFee) { marketInfo.quoteFee = quoteFee; }
             marketInfo.push(market);
         } catch (e) {
             return res.status(400).json({ error: e.message, market: market_id });
