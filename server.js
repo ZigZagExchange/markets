@@ -119,7 +119,6 @@ async function updateTokenFees() {
         const tokenIds = await redis.SMEMBERS(`tokenfee:${chainid}`);
         await Promise.all(tokenIds.map(async (token) => {
             TOKEN_FEES[chainid][token] = await getFeeForToken(token, chainid);
-
         }));
     }
 }
