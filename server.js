@@ -1,4 +1,3 @@
-import markets from './markets.js';
 import * as Redis from 'redis';
 import express from 'express';
 import * as zksync from "zksync";
@@ -6,12 +5,6 @@ import dotenv from "dotenv";
 import fetch from "node-fetch";
 
 dotenv.config();
-
-// globals
-const TOKEN_FEES = {
-    1: {},
-    1000: {}
-}
 
 // Connect to Redis
 const redis_url = process.env.REDIS_URL;
@@ -32,7 +25,6 @@ const syncProvider = {
     1000: await zksync.getDefaultRestProvider("rinkeby"),
 }
 
-updateTokenFees();
 setInterval(updateTokenFees, 300 * 1000)
 
 const app = express();
@@ -51,12 +43,18 @@ app.get("/markets", async function (req, res) {
         const market_id = markets[i];
         try {
             const market = await getMarket(market_id, chain_id)
-            const baseFee = TOKEN_FEES[chain_id][marketInfo.baseAsset.symbol];
-            if(baseFee) { marketInfo.baseFee = baseFee * 1.05; }
-            const quoteFee = TOKEN_FEES[chain_id][marketInfo.quoteAsset.symbol];
-            if(quoteFee) { marketInfo.quoteFee = quoteFee * 1.05; }
+
+            const baseFee = await redis.get(`tokenfee:${chain_id}:${market.baseAsset.symbol}`);
+            const quoteFee = await redis.get(`tokenfee:${chain_id}:${market.quoteAsset.symbol}`);
+            if (baseFee) { 
+                market.baseFee = baseFee * 1.05; 
+            }
+            if (quoteFee) { 
+                market.quoteFee = quoteFee * 1.05; 
+            }
             marketInfo.push(market);
         } catch (e) {
+            console.error(e);
             return res.status(400).json({ error: e.message, market: market_id });
         }
     }
@@ -88,13 +86,22 @@ async function getMarket(market_id, chainid = null) {
     else {
         marketInfo = await fetch("https://arweave.net/" + market_id)
             .then(r => r.json())
+
         marketInfo.baseAsset = await getTokenInfo(marketInfo.baseAssetId, marketInfo.zigzagChainId);
         marketInfo.quoteAsset = await getTokenInfo(marketInfo.quoteAssetId, marketInfo.zigzagChainId);
         marketInfo.id = market_id;
         marketInfo.alias = marketInfo.baseAsset.symbol + "-" + marketInfo.quoteAsset.symbol;
+
         const redis_key_alias = `zigzag:markets:${marketInfo.zigzagChainId}:${marketInfo.alias}`;
         redis.set(redis_key, JSON.stringify(marketInfo));
         redis.set(redis_key_alias, JSON.stringify(marketInfo));
+
+        if (marketInfo.baseAsset.enabledForFees) {
+            await redis.SADD(`tokenfee:${chain_id}`, marketInfo.baseAsset.symbol);
+        }
+        if (marketInfo.quoteAsset.enabledForFees) {
+            await redis.SADD(`tokenfee:${chain_id}`, marketInfo.quoteAsset.symbol);
+        }
         return marketInfo;
     }
 }
@@ -103,25 +110,24 @@ async function getTokenInfo(tokenId, chainid) {
     if (!chainid) throw new Error("chainid not set");
     const redis_key = `tokeninfo:${chainid}:${tokenId}`;
     let tokenInfo = await redis.get(redis_key);
-    await redis.expire(redis_key, 86400)
     if (tokenInfo) return JSON.parse(tokenInfo);
     else {
         tokenInfo = await syncProvider[chainid].tokenInfo(tokenId);
-        redis.set(redis_key, JSON.stringify(tokenInfo));
-        if(tokenInfo.enabledForFees) {
-            await redis.SADD(`tokenfee:${chainid}`, tokenInfo.symbol);
-        }
+        redis.set(redis_key, JSON.stringify(tokenInfo), { 'EX': 86400 });
         return tokenInfo;
     }
 }
 
 async function updateTokenFees() {
-    for(let i=0; i < zksyncChainIds.length; i++) {
-        const chainid = zksyncChainIds[i];
-        const tokenIds = await redis.SMEMBERS(`tokenfee:${chainid}`);
-        await Promise.all(tokenIds.map(async (token) => {
-            TOKEN_FEES[chainid][token] = await getFeeForToken(token, chainid);
-        }));
+    const chainids = [1,1000];
+    for(let i=0; i < chainids.length; i++) {
+        const chainid = chainids[i];
+        const tokens = await redis.SMEMBERS(`tokenfee:${chainid}`);
+        for (let j in tokens) {
+            const token = tokens[j];
+            const fee = await getFeeForToken(token, chainid);
+            await redis.set(`tokenfee:${chainid}:${token}`, fee);
+        }
     }
 }
 
