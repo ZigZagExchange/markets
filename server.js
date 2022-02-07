@@ -32,7 +32,9 @@ const syncProvider = {
     1000: await zksync.getDefaultRestProvider("rinkeby"),
 }
 
-setInterval(updateTokenFees, 15000)
+updateTokenFees();
+setInterval(updateTokenFees, 300 * 1000)
+
 const app = express();
 
 app.use(function(req, res, next) {
@@ -114,8 +116,8 @@ async function getTokenInfo(tokenId, chainid) {
 }
 
 async function updateTokenFees() {
-    for(let i=0; i<zkSyncCainIds.length; i++) {
-        const chainid = zkSyncCainIds[i];
+    for(let i=0; i < zksyncChainIds.length; i++) {
+        const chainid = zksyncChainIds[i];
         const tokenIds = await redis.SMEMBERS(`tokenfee:${chainid}`);
         await Promise.all(tokenIds.map(async (token) => {
             TOKEN_FEES[chainid][token] = await getFeeForToken(token, chainid);
@@ -132,7 +134,7 @@ async function getFeeForToken(tokenId, chainid) {
         );
         return parseFloat(syncProvider[chainid].tokenSet.formatToken(tokenId, feeReturn.totalFee));
     } catch (e) {
-        console.log("Can't get fee for: "+tokenId);
+        console.log("Can't get fee for: " + tokenId);
         if(e.message.includes("Chosen token is not suitable for paying fees.")) {
             redis.SREM(`tokenfee:${chainid}`, tokenId);
         }
