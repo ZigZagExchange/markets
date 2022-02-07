@@ -123,7 +123,7 @@ async function updateTokenFees() {
     for(let i=0; i < chainids.length; i++) {
         const chainid = chainids[i];
         const tokens = await redis.SMEMBERS(`tokenfee:${chainid}`);
-        tokens.forEach(async (token) {
+        tokens.forEach(async (token) => {
             const fee = await getFeeForToken(token, chainid);
             await redis.set(`tokenfee:${chainid}:${token}`, fee);
         });
