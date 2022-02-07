@@ -97,10 +97,10 @@ async function getMarket(market_id, chainid = null) {
         redis.set(redis_key_alias, JSON.stringify(marketInfo));
 
         if (marketInfo.baseAsset.enabledForFees) {
-            await redis.SADD(`tokenfee:${chain_id}`, marketInfo.baseAsset.symbol);
+            await redis.SADD(`tokenfee:${marketInfo.zigzagChainId}`, marketInfo.baseAsset.symbol);
         }
         if (marketInfo.quoteAsset.enabledForFees) {
-            await redis.SADD(`tokenfee:${chain_id}`, marketInfo.quoteAsset.symbol);
+            await redis.SADD(`tokenfee:${marketInfo.zigzagChainId}`, marketInfo.quoteAsset.symbol);
         }
         return marketInfo;
     }
