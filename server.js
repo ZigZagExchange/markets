@@ -7,6 +7,12 @@ import fetch from "node-fetch";
 
 dotenv.config();
 
+// globals
+const TOKEN_FEES = {
+    1: {},
+    1000: {}
+}
+
 // Connect to Redis
 const redis_url = process.env.REDIS_URL;
 const redis_use_tls = redis_url.includes("rediss");
@@ -26,6 +32,7 @@ const syncProvider = {
     1000: await zksync.getDefaultRestProvider("rinkeby"),
 }
 
+setInterval(updateTokenFees, 15000)
 const app = express();
 
 app.use(function(req, res, next) {
@@ -42,6 +49,10 @@ app.get("/markets", async function (req, res) {
         const market_id = markets[i];
         try {
             const market = await getMarket(market_id, chain_id)
+            const baseFee = TOKEN_FEES[chain_id][marketInfo.baseAsset.symbol];
+            if(baseFee) { marketInfo.baseFee = baseFee * 1.05; }
+            const quoteFee = TOKEN_FEES[chain_id][marketInfo.quoteAsset.symbol];
+            if(quoteFee) { marketInfo.quoteFee = quoteFee * 1.05; }
             marketInfo.push(market);
         } catch (e) {
             return res.status(400).json({ error: e.message, market: market_id });
@@ -90,10 +101,41 @@ async function getTokenInfo(tokenId, chainid) {
     if (!chainid) throw new Error("chainid not set");
     const redis_key = `tokeninfo:${chainid}:${tokenId}`;
     let tokenInfo = await redis.get(redis_key);
+    await redis.expire(redis_key, 86400)
     if (tokenInfo) return JSON.parse(tokenInfo);
     else {
         tokenInfo = await syncProvider[chainid].tokenInfo(tokenId);
         redis.set(redis_key, JSON.stringify(tokenInfo));
+        if(tokenInfo.enabledForFees) {
+            await redis.SADD(`tokenfee:${chainid}`, tokenInfo.symbol);
+        }
         return tokenInfo;
+    }
+}
+
+async function updateTokenFees() {
+    for(let i=0; i<zkSyncCainIds.length; i++) {
+        const chainid = zkSyncCainIds[i];
+        const tokenIds = await redis.SMEMBERS(`tokenfee:${chainid}`);
+        await Promise.all(tokenIds.map(async (token) => {
+            TOKEN_FEES[chainid][token] = await getFeeForToken(token, chainid);
+        }));
+    }
+}
+
+async function getFeeForToken(tokenId, chainid) {
+    try {
+        const feeReturn = await syncProvider[chainid].getTransactionFee(
+            "Swap",
+            '0x88d23a44d07f86b2342b4b06bd88b1ea313b6976',
+            tokenId
+        );
+        return parseFloat(syncProvider[chainid].tokenSet.formatToken(tokenId, feeReturn.totalFee));
+    } catch (e) {
+        console.log("Can't get fee for: "+tokenId);
+        if(e.message.includes("Chosen token is not suitable for paying fees.")) {
+            redis.SREM(`tokenfee:${chainid}`, tokenId);
+        }
+        return null;
     }
 }
