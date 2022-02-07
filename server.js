@@ -47,10 +47,10 @@ app.get("/markets", async function (req, res) {
             const baseFee = await redis.get(`tokenfee:${chain_id}:${market.baseAsset.symbol}`);
             const quoteFee = await redis.get(`tokenfee:${chain_id}:${market.quoteAsset.symbol}`);
             if (baseFee) { 
-                market.baseFee = baseFee * 1.05; 
+                market.baseFee = baseFee * 1.1; 
             }
             if (quoteFee) { 
-                market.quoteFee = quoteFee * 1.05; 
+                market.quoteFee = quoteFee * 1.1; 
             }
             marketInfo.push(market);
         } catch (e) {
