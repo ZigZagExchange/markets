@@ -25,7 +25,7 @@ const syncProvider = {
     1000: await zksync.getDefaultRestProvider("rinkeby"),
 }
 
-setInterval(updateTokenFees, 300 * 1000)
+setInterval(updateTokenFees, 180 * 1000)
 
 const app = express();
 
