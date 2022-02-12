@@ -129,9 +129,9 @@ async function getTokenInfo(tokenId, chainid) {
 }
 
 async function updateTokenFees() {
-    const chainids = [1,1000];
-    for(let i=0; i < chainids.length; i++) {
-        const chainid = chainids[i];
+    const chainIds = [1,1000];
+    for(let i=0; i < chainIds.length; i++) {
+        const chainid = chainIds[i];
         const availableTokens = await redis.SMEMBERS(`tokenfee:${chainid}`);
         availableTokens.forEach(async (token) => {
             const fee = await getFeeForFeeToken(token, chainid);
@@ -151,9 +151,9 @@ async function updateTokenFees() {
 
 async function checkForNewFeeTokens() {
     console.log("Checking for new fee tokens:")
-    const chainids = [1,1000];
-    for(let i=0; i < chainids.length; i++) {
-        const chainId = chainids[i];
+    const chainIds = [1,1000];
+    for(let i=0; i < chainIds.length; i++) {
+        const chainId = chainIds[i];
         const notAvailableTokens = await redis.SMEMBERS(`nottokenfee:${chainId}`);
         notAvailableTokens.forEach(async (token) => {
             const fee = await getFeeForFeeToken(token, chainId);
