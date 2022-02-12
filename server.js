@@ -124,8 +124,12 @@ async function updateTokenFees() {
         const chainid = chainids[i];
         const tokens = await redis.SMEMBERS(`tokenfee:${chainid}`);
         tokens.forEach(async (token) => {
-            const fee = await getFeeForToken(token, chainid);
-            await redis.set(`tokenfee:${chainid}:${token}`, fee);
+            try {
+                const fee = await getFeeForToken(token, chainid);
+                await redis.set(`tokenfee:${chainid}:${token}`, fee);
+            } catch (e) {
+                console.error(e);
+            }
         });
     }
 }
