@@ -158,8 +158,8 @@ async function checkForNewFeeTokens() {
         notAvailableTokens.forEach(async (token) => {
             const fee = await getFeeForFeeToken(token, chainId);
             if(fee) {
-                redis.SADD(`tokenfee:${chainid}`, tokenId);
-                redis.SREM(`nottokenfee:${chainid}`, tokenId);
+                redis.SADD(`tokenfee:${chainid}`, token);
+                redis.SREM(`nottokenfee:${chainid}`, token);
             }
         });
     }
