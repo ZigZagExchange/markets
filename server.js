@@ -135,14 +135,14 @@ async function updateTokenFees() {
         availableTokens.forEach(async (token) => {
             const fee = await getFeeForFeeToken(token, chainid);
             if(fee) {
-                redis.set(`tokenfee:${chainid}:${token}`, fee);
+                redis.set(`tokenfee:${chainid}:${token}`, fee, { 'EX': 300 });
             }
         });
         const notAvailableTokens = await redis.SMEMBERS(`nottokenfee:${chainid}`);
         notAvailableTokens.forEach(async (token) => {
             const fee = await getFeeForNotFeeToken(token, chainid);
             if (fee) {
-                redis.set(`tokenfee:${chainid}:${token}`, fee);
+                redis.set(`tokenfee:${chainid}:${token}`, fee, { 'EX': 300 });
             }
         });
     }
