@@ -150,6 +150,7 @@ async function updateTokenFees() {
 }
 
 async function checkForNewFeeTokens() {
+  console.log("Checking for new fee tokens:")
     const chainids = [1,1000];
     for(let i=0; i < chainids.length; i++) {
         const chainId = chainids[i];
