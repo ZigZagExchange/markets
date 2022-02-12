@@ -55,7 +55,7 @@ app.get("/markets", async function (req, res) {
             marketInfo.push(market);
         } catch (e) {
             console.error(e);
-            return res.status(400).json({ error: e.message, market: market_id });
+            marketInfo.push({ error: e.message, market: market_id });
         }
     }
     return res.status(200).json(marketInfo);
