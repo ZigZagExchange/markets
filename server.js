@@ -30,7 +30,7 @@ const zkSyncBaseUrl = {
     1000: "https://rinkeby-api.zksync.io/api/v0.2/"
 }
 
-setInterval(updateTokenFees, 180 * 1000)
+setInterval(updateTokenFees, 60 * 1000)
 
 const app = express();
 
