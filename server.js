@@ -30,7 +30,8 @@ const zkSyncBaseUrl = {
     1000: "https://rinkeby-api.zksync.io/api/v0.2/"
 }
 
-setInterval(updateTokenFees, 60 * 1000)
+setInterval(updateTokenFees, 60000);
+setInterval(checkForNewFeeTokens, 86400000);
 
 const app = express();
 
@@ -143,6 +144,21 @@ async function updateTokenFees() {
             const fee = await getFeeForNotFeeToken(token, chainid);
             if (fee) {
                 redis.set(`tokenfee:${chainid}:${token}`, fee, { 'EX': 300 });
+            }
+        });
+    }
+}
+
+async function checkForNewFeeTokens() {
+    const chainids = [1,1000];
+    for(let i=0; i < chainids.length; i++) {
+        const chainId = chainids[i];
+        const notAvailableTokens = await redis.SMEMBERS(`nottokenfee:${chainId}`);
+        notAvailableTokens.forEach(async (token) => {
+            const fee = await getFeeForFeeToken(token, chainId);
+            if(fee) {
+                redis.SADD(`tokenfee:${chainid}`, tokenId);
+                redis.SREM(`nottokenfee:${chainid}`, tokenId);
             }
         });
     }
