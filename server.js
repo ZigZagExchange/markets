@@ -9,7 +9,7 @@ dotenv.config();
 // Connect to Redis
 const redis_url = process.env.REDIS_URL;
 const redis_use_tls = redis_url.includes("rediss");
-const redis = Redis.createClient({ 
+const redis = Redis.createClient({
     url: redis_url,
     socket: {
         tls: redis_use_tls,
@@ -52,11 +52,11 @@ app.get("/markets", async function (req, res) {
 
             const baseFee = await redis.get(`tokenfee:${chain_id}:${market.baseAsset.symbol}`);
             const quoteFee = await redis.get(`tokenfee:${chain_id}:${market.quoteAsset.symbol}`);
-            if (baseFee) { 
-                market.baseFee = baseFee * 1.1; 
+            if (baseFee) {
+                market.baseFee = baseFee * 1.1;
             }
-            if (quoteFee) { 
-                market.quoteFee = quoteFee * 1.1; 
+            if (quoteFee) {
+                market.quoteFee = quoteFee * 1.1;
             }
             marketInfo.push(market);
         } catch (e) {
