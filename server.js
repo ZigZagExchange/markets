@@ -191,7 +191,7 @@ async function getFeeForNotFeeToken(token, chainid) {
   try {
       const usdPrice = await fetch(zkSyncBaseUrl[chainid] + `tokens/${token}/priceIn/usd`).then(r => r.json());
       const usdReference = await redis.get(`tokenfee:${chainid}:USDC`);
-      if (!usdPrice.result.price || usdPrice.result.price == 0) return null;
+      if (!usdReference || !usdPrice.result.price || usdPrice.result.price == 0) return null;
       return (usdReference / usdPrice.result.price);
   } catch (e) {
       console.log("Can't get fee for non: " + token + ", error: "+e);
