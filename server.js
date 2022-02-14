@@ -138,12 +138,18 @@ async function updateTokenFees() {
             if(fee) {
                 redis.set(`tokenfee:${chainid}:${token}`, fee, { 'EX': 300 });
             }
+            else {
+                redis.del(`tokenfee:${chainid}:${token}`);
+            }
         });
         const notAvailableTokens = await redis.SMEMBERS(`nottokenfee:${chainid}`);
         notAvailableTokens.forEach(async (token) => {
             const fee = await getFeeForNotFeeToken(token, chainid);
             if (fee) {
                 redis.set(`tokenfee:${chainid}:${token}`, fee, { 'EX': 300 });
+            }
+            else {
+                redis.del(`tokenfee:${chainid}:${token}`);
             }
         });
     }
@@ -187,6 +193,7 @@ async function getFeeForNotFeeToken(tokenId, chainid) {
   try {
       const usdPrice = await fetch(zkSyncBaseUrl[chainid] + `tokens/${tokenId}/priceIn/usd`).then(r => r.json());
       const usdReference = await redis.get(`tokenfee:${chainid}:USDC`); 
+      if (!usdPrice.result.price || usdPrice.result.price == 0) return null;
       return (usdReference / usdPrice.result.price);
   } catch (e) {
       console.log("Can't get fee for non: " + tokenId + ", error: "+e);
