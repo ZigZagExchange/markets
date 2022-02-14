@@ -137,8 +137,7 @@ async function updateTokenFees() {
             const fee = await getFeeForFeeToken(token, chainid);
             if(fee) {
                 redis.set(`tokenfee:${chainid}:${token}`, fee, { 'EX': 300 });
-            }
-            else {
+            } else {
                 redis.del(`tokenfee:${chainid}:${token}`);
             }
         });
@@ -147,8 +146,7 @@ async function updateTokenFees() {
             const fee = await getFeeForNotFeeToken(token, chainid);
             if (fee) {
                 redis.set(`tokenfee:${chainid}:${token}`, fee, { 'EX': 300 });
-            }
-            else {
+            } else {
                 redis.del(`tokenfee:${chainid}:${token}`);
             }
         });
@@ -171,32 +169,32 @@ async function checkForNewFeeTokens() {
     }
 }
 
-async function getFeeForFeeToken(tokenId, chainid) {
+async function getFeeForFeeToken(token, chainid) {
     try {
         const feeReturn = await syncProvider[chainid].getTransactionFee(
             "Swap",
             '0x88d23a44d07f86b2342b4b06bd88b1ea313b6976',
-            tokenId
+            token
         );
-        return parseFloat(syncProvider[chainid].tokenSet.formatToken(tokenId, feeReturn.totalFee));
+        return parseFloat(syncProvider[chainid].tokenSet.formatToken(token, feeReturn.totalFee));
     } catch (e) {
-        console.log("Can't get fee for: " + tokenId + ", error: "+e);
+        console.log("Can't get fee for: " + token + ", error: "+e);
         if(e.message.includes("Chosen token is not suitable for paying fees.")) {
-            redis.SREM(`tokenfee:${chainid}`, tokenId);
-            redis.SADD(`nottokenfee:${chainid}`, tokenId);
+            redis.SREM(`tokenfee:${chainid}`, token);
+            redis.SADD(`nottokenfee:${chainid}`, token);
         }
         return null;
     }
 }
 
-async function getFeeForNotFeeToken(tokenId, chainid) {
+async function getFeeForNotFeeToken(token, chainid) {
   try {
-      const usdPrice = await fetch(zkSyncBaseUrl[chainid] + `tokens/${tokenId}/priceIn/usd`).then(r => r.json());
-      const usdReference = await redis.get(`tokenfee:${chainid}:USDC`); 
+      const usdPrice = await fetch(zkSyncBaseUrl[chainid] + `tokens/${token}/priceIn/usd`).then(r => r.json());
+      const usdReference = await redis.get(`tokenfee:${chainid}:USDC`);
       if (!usdPrice.result.price || usdPrice.result.price == 0) return null;
       return (usdReference / usdPrice.result.price);
   } catch (e) {
-      console.log("Can't get fee for non: " + tokenId + ", error: "+e);
+      console.log("Can't get fee for non: " + token + ", error: "+e);
       return null;
   }
 }
