@@ -3,6 +3,8 @@ import express from 'express';
 import * as zksync from "zksync";
 import dotenv from "dotenv";
 import fetch from "node-fetch";
+import ethers from "ethers";
+import fs from 'fs';
 
 dotenv.config();
 
@@ -30,6 +32,20 @@ const zkSyncBaseUrl = {
     1000: "https://rinkeby-api.zksync.io/api/v0.2/"
 }
 
+// Connect to Infura
+const ethersProvider = new ethers.providers.InfuraProvider(
+    "mainnet",
+    process.env.INFURA_PROJECT_ID,
+);
+const rinkebyEthersProvider = new ethers.providers.InfuraProvider(
+    "rinkeby",
+    process.env.INFURA_PROJECT_ID,
+);
+
+// Load ERC-20 ABI
+const ERC20_ABI = JSON.parse(fs.readFileSync('ERC20.abi'));
+
+// Initiate update loops
 setInterval(updateTokenFees, 60000);
 setInterval(checkForNewFeeTokens, 86400000);
 
@@ -58,6 +74,8 @@ app.get("/markets", async function (req, res) {
             if (quoteFee) {
                 market.quoteFee = quoteFee * 1.1;
             }
+            market.baseAsset.name = await getTokenName(market.baseAsset.address, chain_id, market.baseAsset.symbol);
+            market.quoteAsset.name = await getTokenName(market.quoteAsset.address, chain_id, market.quoteAsset.symbol);
             marketInfo.push(market);
         } catch (e) {
             console.error(e);
@@ -76,6 +94,7 @@ async function getMarket(market_id, chainid = null) {
         if (!chainid) throw new Error("chainid must be set for alias calls");
         const alias = market_id;
         marketInfo = await redis.get(`zigzag:markets:${chainid}:${alias}`);
+
         if (marketInfo) {
             return JSON.parse(marketInfo);
         }
@@ -95,6 +114,8 @@ async function getMarket(market_id, chainid = null) {
 
         marketInfo.baseAsset = await getTokenInfo(marketInfo.baseAssetId, marketInfo.zigzagChainId);
         marketInfo.quoteAsset = await getTokenInfo(marketInfo.quoteAssetId, marketInfo.zigzagChainId);
+        marketInfo.baseAsset.name = await getTokenName(marketInfo.baseAsset.address, marketInfo.zigzagChainId, marketInfo.baseAsset.symbol);
+        marketInfo.quoteAsset.name = await getTokenName(marketInfo.quoteAsset.address, marketInfo.zigzagChainId, marketInfo.quoteAsset.symbol);
         marketInfo.id = market_id;
         marketInfo.alias = marketInfo.baseAsset.symbol + "-" + marketInfo.quoteAsset.symbol;
 
@@ -126,6 +147,27 @@ async function getTokenInfo(tokenId, chainid) {
         redis.set(redis_key, JSON.stringify(tokenInfo), { 'EX': 86400 });
         return tokenInfo;
     }
+}
+
+async function getTokenName(contractAddress, chainid, symbol) {
+    const redis_key = `tokenname:${chainid}:${contractAddress}`;
+
+    const cache = await redis.get(redis_key);
+    if (cache) return cache;
+
+    let name;
+    if (symbol === "ETH") {
+        name = "Ethereum";
+    }
+    else {
+        const contract = new ethers.Contract(contractAddress, ERC20_ABI, ethersProvider);
+        name = await contract.name();
+    }
+
+    if (name) redis.set(redis_key, name);
+    else redis.set(redis_key, symbol);
+
+    return name;
 }
 
 async function updateTokenFees() {
@@ -185,16 +227,4 @@ async function getFeeForFeeToken(token, chainid) {
         }
         return null;
     }
-}
-
-async function getFeeForNotFeeToken(token, chainid) {
-  try {
-      const usdPrice = await fetch(zkSyncBaseUrl[chainid] + `tokens/${token}/priceIn/usd`).then(r => r.json());
-      const usdReference = await redis.get(`tokenfee:${chainid}:USDC`);
-      if (!usdReference || !usdPrice.result.price || usdPrice.result.price == 0) return null;
-      return (usdReference / usdPrice.result.price);
-  } catch (e) {
-      console.log("Can't get fee for non: " + token + ", error: "+e);
-      return null;
-  }
 }
