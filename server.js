@@ -160,8 +160,13 @@ async function getTokenName(contractAddress, chainid, symbol) {
         name = "Ethereum";
     }
     else {
-        const contract = new ethers.Contract(contractAddress, ERC20_ABI, ethersProvider);
-        name = await contract.name();
+        try {
+            const contract = new ethers.Contract(contractAddress, ERC20_ABI, ethersProvider);
+            name = await contract.name();
+        } catch (e) {
+            console.error(e);
+            name = symbol;
+        }
     }
 
     if (name) redis.set(redis_key, name);
