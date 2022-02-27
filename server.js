@@ -3,6 +3,8 @@ import express from 'express';
 import * as zksync from "zksync";
 import dotenv from "dotenv";
 import fetch from "node-fetch";
+import ethers from "ethers";
+import fs from 'fs';
 
 dotenv.config();
 
@@ -25,7 +27,27 @@ const syncProvider = {
     1000: await zksync.getDefaultRestProvider("rinkeby"),
 }
 
-setInterval(updateTokenFees, 180 * 1000)
+const zkSyncBaseUrl = {
+    1: "https://api.zksync.io/api/v0.2/",
+    1000: "https://rinkeby-api.zksync.io/api/v0.2/"
+}
+
+// Connect to Infura
+const ethersProvider = new ethers.providers.InfuraProvider(
+    "mainnet",
+    process.env.INFURA_PROJECT_ID,
+);
+const rinkebyEthersProvider = new ethers.providers.InfuraProvider(
+    "rinkeby",
+    process.env.INFURA_PROJECT_ID,
+);
+
+// Load ERC-20 ABI
+const ERC20_ABI = JSON.parse(fs.readFileSync('ERC20.abi'));
+
+// Initiate update loops
+setInterval(updateTokenFees, 60000);
+setInterval(checkForNewFeeTokens, 86400000);
 
 const app = express();
 
@@ -52,6 +74,8 @@ app.get("/markets", async function (req, res) {
             if (quoteFee) {
                 market.quoteFee = quoteFee * 1.1;
             }
+            market.baseAsset.name = await getTokenName(market.baseAsset.address, chain_id, market.baseAsset.symbol);
+            market.quoteAsset.name = await getTokenName(market.quoteAsset.address, chain_id, market.quoteAsset.symbol);
             marketInfo.push(market);
         } catch (e) {
             console.error(e);
@@ -70,6 +94,7 @@ async function getMarket(market_id, chainid = null) {
         if (!chainid) throw new Error("chainid must be set for alias calls");
         const alias = market_id;
         marketInfo = await redis.get(`zigzag:markets:${chainid}:${alias}`);
+
         if (marketInfo) {
             return JSON.parse(marketInfo);
         }
@@ -89,6 +114,8 @@ async function getMarket(market_id, chainid = null) {
 
         marketInfo.baseAsset = await getTokenInfo(marketInfo.baseAssetId, marketInfo.zigzagChainId);
         marketInfo.quoteAsset = await getTokenInfo(marketInfo.quoteAssetId, marketInfo.zigzagChainId);
+        marketInfo.baseAsset.name = await getTokenName(marketInfo.baseAsset.address, marketInfo.zigzagChainId, marketInfo.baseAsset.symbol);
+        marketInfo.quoteAsset.name = await getTokenName(marketInfo.quoteAsset.address, marketInfo.zigzagChainId, marketInfo.quoteAsset.symbol);
         marketInfo.id = market_id;
         marketInfo.alias = marketInfo.baseAsset.symbol + "-" + marketInfo.quoteAsset.symbol;
 
@@ -98,9 +125,13 @@ async function getMarket(market_id, chainid = null) {
 
         if (marketInfo.baseAsset.enabledForFees) {
             await redis.SADD(`tokenfee:${marketInfo.zigzagChainId}`, marketInfo.baseAsset.symbol);
+        } else {
+            await redis.SADD(`nottokenfee:${marketInfo.zigzagChainId}`, marketInfo.baseAsset.symbol);
         }
         if (marketInfo.quoteAsset.enabledForFees) {
             await redis.SADD(`tokenfee:${marketInfo.zigzagChainId}`, marketInfo.quoteAsset.symbol);
+        } else {
+            await redis.SADD(`nottokenfee:${marketInfo.zigzagChainId}`, marketInfo.quoteAsset.symbol);
         }
         return marketInfo;
     }
@@ -118,30 +149,86 @@ async function getTokenInfo(tokenId, chainid) {
     }
 }
 
+async function getTokenName(contractAddress, chainid, symbol) {
+    const redis_key = `tokenname:${chainid}:${contractAddress}`;
+
+    const cache = await redis.get(redis_key);
+    if (cache) return cache;
+
+    let name;
+    if (symbol === "ETH") {
+        name = "Ethereum";
+    }
+    else {
+        try {
+            const contract = new ethers.Contract(contractAddress, ERC20_ABI, ethersProvider);
+            name = await contract.name();
+        } catch (e) {
+            console.error(e);
+            name = symbol;
+        }
+    }
+
+    if (name) redis.set(redis_key, name);
+    else redis.set(redis_key, symbol);
+
+    return name;
+}
+
 async function updateTokenFees() {
-    const chainids = [1,1000];
-    for(let i=0; i < chainids.length; i++) {
-        const chainid = chainids[i];
-        const tokens = await redis.SMEMBERS(`tokenfee:${chainid}`);
-        tokens.forEach(async (token) => {
-            const fee = await getFeeForToken(token, chainid);
-            await redis.set(`tokenfee:${chainid}:${token}`, fee);
+    const chainIds = [1,1000];
+    for(let i=0; i < chainIds.length; i++) {
+        const chainid = chainIds[i];
+        const availableTokens = await redis.SMEMBERS(`tokenfee:${chainid}`);
+        availableTokens.forEach(async (token) => {
+            const fee = await getFeeForFeeToken(token, chainid);
+            if(fee) {
+                redis.set(`tokenfee:${chainid}:${token}`, fee, { 'EX': 300 });
+            } else {
+                redis.del(`tokenfee:${chainid}:${token}`);
+            }
+        });
+        const notAvailableTokens = await redis.SMEMBERS(`nottokenfee:${chainid}`);
+        notAvailableTokens.forEach(async (token) => {
+            const fee = await getFeeForNotFeeToken(token, chainid);
+            if (fee) {
+                redis.set(`tokenfee:${chainid}:${token}`, fee, { 'EX': 300 });
+            } else {
+                redis.del(`tokenfee:${chainid}:${token}`);
+            }
         });
     }
 }
 
-async function getFeeForToken(tokenId, chainid) {
+async function checkForNewFeeTokens() {
+    console.log("Checking for new fee tokens:")
+    const chainIds = [1,1000];
+    for(let i=0; i < chainIds.length; i++) {
+        const chainId = chainIds[i];
+        const notAvailableTokens = await redis.SMEMBERS(`nottokenfee:${chainId}`);
+        notAvailableTokens.forEach(async (token) => {
+            const fee = await getFeeForFeeToken(token, chainId);
+            if(fee) {
+                redis.SADD(`tokenfee:${chainid}`, token);
+                redis.SREM(`nottokenfee:${chainid}`, token);
+            }
+        });
+    }
+}
+
+async function getFeeForFeeToken(token, chainid) {
     try {
         const feeReturn = await syncProvider[chainid].getTransactionFee(
             "Swap",
             '0x88d23a44d07f86b2342b4b06bd88b1ea313b6976',
-            tokenId
+            token
         );
-        return parseFloat(syncProvider[chainid].tokenSet.formatToken(tokenId, feeReturn.totalFee));
+        return parseFloat(syncProvider[chainid].tokenSet.formatToken(token, feeReturn.totalFee));
     } catch (e) {
-        console.log("Can't get fee for: " + tokenId);
+        console.log("Can't get fee for: " + token + ", error: "+e);
         if(e.message.includes("Chosen token is not suitable for paying fees.")) {
-            redis.SREM(`tokenfee:${chainid}`, tokenId);
+            redis.SREM(`tokenfee:${chainid}`, token);
+            redis.SADD(`nottokenfee:${chainid}`, token);
         }
         return null;
     }
