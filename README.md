@@ -1,3 +1,15 @@
+# OUTDATED
+
+We now provide marketInfo directy from the ZigZag server. You should use those endpoints directy for better performance.
+
+Here is the README: https://github.com/ZigZagExchange/backend
+
+
+Mainnet: https://zigzag-exchange.herokuapp.com/api/v1/marketinfos?chain_id=1&market=ETH-USDC
+
+Testnet: https://secret-thicket-93345.herokuapp.com/api/v1/marketinfos?chain_id=1000&market=ETH-USDC
+
+
 # ZigZag Markets
 
 Base URL: https://zigzag-markets.herokuapp.com/

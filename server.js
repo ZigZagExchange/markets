@@ -1,22 +1,70 @@
-import * as Redis from 'redis';
 import express from 'express';
-import * as zksync from "zksync";
 import dotenv from "dotenv";
 import fetch from "node-fetch";
-import ethers from "ethers";
+
+/*
+import * as zksync from "zksync"; // "zksync": "^0.11.6"
+import * as Redis from 'redis'; // "redis": "^4.0.1",
+import ethers from "ethers"; // "ethers": "^5.5.4",
 import fs from 'fs';
+*/
 
 dotenv.config();
+
+
+//////// new pass on to backend server ////////
+const VALID_CHAINS = [1, 1000, 1001];
+const app = express();
+
+app.use(function (req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
+
+app.get("/markets", async function (req, res) {
+  const chain_id = Number(req.query.chainid);
+  const markets = req.query.id.split(",");
+
+  if (!VALID_CHAINS.includes(chain_id)) {
+    res.send({ op: 'error', message: `${chain_id} is not a valid chain id. Use ${VALID_CHAINS}` });
+    return;
+  }
+
+  const baseUrl = (chain_id === 1)
+    ? "https://zigzag-exchange.herokuapp.com"
+    : "https://secret-thicket-93345.herokuapp.com";
+
+
+  let fetchResult;
+  try {
+    const controller = new AbortController()
+    setTimeout(() => controller.abort(), 15000)
+
+    fetchResult = await fetch(`${baseUrl}/api/v1/marketinfos?chain_id=${chain_id}&market=${markets}`, {
+      signal: controller.signal,
+    }).then((r) => r.json());
+  } catch (e) {
+    console.error(e);
+    return res.status(400).json(e.message);
+  }
+  return res.status(200).json(fetchResult);
+});
+
+app.listen(process.env.PORT || 3002);
+//////// new pass on to backend server ////////
+
+/*
 
 // Connect to Redis
 const redis_url = process.env.REDIS_URL;
 const redis_use_tls = redis_url.includes("rediss");
 const redis = Redis.createClient({
-    url: redis_url,
-    socket: {
-        tls: redis_use_tls,
-        rejectUnauthorized: false
-    },
+  url: redis_url,
+  socket: {
+    tls: redis_use_tls,
+    rejectUnauthorized: false
+  },
 });
 redis.on('error', (err) => console.log('Redis Client Error', err));
 await redis.connect();
@@ -233,3 +281,4 @@ async function getFeeForFeeToken(token, chainid) {
         return null;
     }
 }
+*/
